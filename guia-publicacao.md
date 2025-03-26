@@ -168,19 +168,144 @@ O sistema criará automaticamente uma nova versão do plugin.
 
 ## 8. Integração com MCP.run
 
-Depois de publicado, seu plugin estará disponível no MCP.run através do URL SSE:
+Depois de publicado, seu plugin estará disponível no MCP.run através de diferentes tipos de URLs e integrações.
+
+### 8.1 Conexão via SSE (Server-Sent Events)
+
+Este é o método padrão para conexão contínua, onde o servidor envia eventos ao cliente:
 
 ```
 https://www.mcp.run/api/mcp/sse?nonce=XXXXX&username=XXXXX&profile=XXXXX&sig=XXXXX
 ```
 
-Para usar seu perfil específico:
+Exemplo prático:
 
 ```
 https://www.mcp.run/api/mcp/sse?nonce=T8zqU1NRGYjE_eHF3MuT_w&username=diegofornalha&profile=diegofornalha%2Ftess&sig=SBGfKwIDCeuFE52ktYCu5aNI8-LpHyOKB7IIw_BgT44
 ```
 
-## 9. Resolução de problemas
+### 8.2 API REST para execução direta de tarefas
+
+Você também pode invocar tarefas diretamente via API REST:
+
+```
+https://www.mcp.run/api/runs/USERNAME/PROFILE/TASK?nonce=XXXXX&sig=XXXXX
+```
+
+Exemplo prático:
+
+```
+https://www.mcp.run/api/runs/diegofornalha/tess/tass?nonce=Zg8Cysug6snMTd20qWE8KA&sig=kq4EXU6dtydmIpyO7KjhDOmGckG77XHG__t9POLvs3k
+```
+
+Uso com curl:
+
+```bash
+curl -X POST "https://www.mcp.run/api/runs/diegofornalha/tess/tass?nonce=Zg8Cysug6snMTd20qWE8KA&sig=kq4EXU6dtydmIpyO7KjhDOmGckG77XHG__t9POLvs3k" \
+  -H "Content-Type: application/json" \
+  -d '{"input": "Listar todos os agentes disponíveis"}'
+```
+
+## 9. Configurando tarefas no MCP.run
+
+O MCP.run permite criar tarefas personalizadas que utilizam as ferramentas do seu plugin.
+
+### 9.1 Criando uma nova tarefa
+
+1. Acesse o painel do MCP.run: https://www.mcp.run/settings/
+2. Navegue até "Tasks" em seu perfil (ex: diegofornalha/tess)
+3. Clique em "New Task" para criar uma tarefa
+
+### 9.2 Configurando o prompt da tarefa
+
+Ao criar uma tarefa, forneça instruções específicas no prompt. Exemplo:
+
+```
+Você é um assistente especializado em gerenciar agentes TESS. Sua tarefa é ajudar o usuário a:
+1. Listar os agentes disponíveis
+2. Executar agentes quando solicitado
+3. Gerenciar arquivos associados aos agentes
+
+Use as ferramentas da API TESS para realizar essas tarefas e responda sempre em português.
+```
+
+### 9.3 Acessando a tarefa configurada
+
+Após configurar a tarefa, você pode acessá-la através de:
+
+1. **Interface web**: https://www.mcp.run/settings/tasks/diegofornalha/tess/NOME_DA_TAREFA
+2. **API REST**: https://www.mcp.run/api/runs/diegofornalha/tess/NOME_DA_TAREFA?nonce=XXX&sig=XXX
+3. **Cliente SSE**: Através da URL SSE do seu perfil
+
+## 10. Integração com Arcee CLI
+
+Você pode integrar as ferramentas TESS ao seu Arcee CLI para uso direto em aplicações Python.
+
+### 10.1 Configuração da integração
+
+1. Configure a URL SSE no arquivo `.env` do Arcee CLI:
+   ```
+   MCP_SSE_URL=https://www.mcp.run/api/mcp/sse?nonce=T8zqU1NRGYjE_eHF3MuT_w&username=diegofornalha&profile=diegofornalha%2Ftess&sig=SBGfKwIDCeuFE52ktYCu5aNI8-LpHyOKB7IIw_BgT44
+   ```
+
+2. Crie um módulo de integração em `arcee_cli/examples/mcp/tess_integration.py`
+
+3. Implemente funções para processar comandos TESS, com manipuladores para:
+   - Listar agentes
+   - Obter detalhes de agentes
+   - Executar agentes
+   - Gerenciar arquivos
+
+4. Registre os comandos no cliente de chat:
+   ```python
+   # Em arcee_cli/chat/__init__.py
+   from arcee_cli.examples.mcp.tess_integration import register_tess_commands
+   
+   # No inicializador
+   register_tess_commands(chat_client)
+   ```
+
+### 10.2 Uso via Arcee CLI
+
+Após a integração, você pode usar comandos como:
+
+```
+/tess.listar_agentes page=1 per_page=10
+/tess.obter_agente agent_id=42
+/tess.executar_agente agent_id=42 model="tess-ai-light"
+/tess.help
+```
+
+## 11. Entendendo o SSE (Server-Sent Events)
+
+O SSE é uma tecnologia fundamental no MCP.run que permite comunicação unidirecional do servidor para o cliente.
+
+### 11.1 Características do SSE
+
+- Conexão HTTP persistente unidirecional (servidor → cliente)
+- Formato de texto simples e leve
+- Reconexão automática em caso de falha
+- Ideal para atualizações em tempo real
+
+### 11.2 Implementação no código
+
+O Arcee CLI já possui uma implementação robusta de cliente SSE em:
+`arcee_cli/infrastructure/mcp/mcp_sse_client.py`
+
+Este cliente gerencia:
+- Conexão e reconexão
+- Processamento de eventos
+- Filas de eventos
+- Manipulação de erros
+
+### 11.3 Fluxo SSE com TESS
+
+1. O cliente conecta ao endpoint SSE do MCP.run
+2. O cliente envia solicitações de ferramentas TESS
+3. O servidor processa as solicitações e retorna eventos com resultados
+4. O cliente processa os eventos e exibe resultados
+
+## 12. Resolução de problemas
 
 ### Erros comuns
 
@@ -202,12 +327,26 @@ https://www.mcp.run/api/mcp/sse?nonce=T8zqU1NRGYjE_eHF3MuT_w&username=diegoforna
    ```
    Solução: Verifique se o plugin compilou corretamente e se você tem permissões.
 
-## 10. Recursos adicionais
+4. **Tarefa não configurada no MCP.run:**
+   ```
+   I apologize, but I notice that this appears to be an example/template task prompt...
+   ```
+   Solução: Configure o prompt específico para a tarefa nas configurações.
+
+5. **Erro de conexão SSE:**
+   ```
+   Falha na conexão SSE: HTTP 401
+   ```
+   Solução: Verifique se a URL SSE está atualizada e contém os parâmetros de autenticação corretos.
+
+## 13. Recursos adicionais
 
 - [Documentação do XTP](https://xtp.dylibso.com/docs)
 - [Repositório GitHub do plugin](https://github.com/diegofornalha/mcp-server-tess-xtp)
 - [API TESS](https://tess.pareto.io/api)
 - [MCP.run](https://www.mcp.run)
+- [Documentação MCP SSE](https://www.mcp.run/docs/sse)
+- [Repositório Arcee CLI](https://github.com/diegofornalha/arcee-cli)
 
 ---
 
