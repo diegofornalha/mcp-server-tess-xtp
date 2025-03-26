@@ -1,59 +1,113 @@
-# MCP-Server-TESS-XTP
+# Servidor TESS com Suporte a MCP
 
-Extensão XTP para o servidor MCP-TESS - Integração da API TESS com o protocolo XTP.
+Este é um servidor proxy que integra o TESS (Text Evaluation and Semantic Services) com o MCP (Multi-Channel Platform).
 
-## Sobre
+## Requisitos
 
-Este projeto implementa uma extensão XTP para o servidor MCP-TESS, permitindo a utilização das ferramentas da API TESS em plataformas compatíveis com XTP.
+- Node.js 18+
+- Rust e Cargo
+- wasm32-wasi target (`rustup target add wasm32-wasi`)
 
-## Recursos
+## Configuração
 
-- **Ferramentas TESS via XTP**: Acesso às principais ferramentas da API TESS através do protocolo XTP
-- **Integração com Extism**: Compilação para WebAssembly permitindo uso em diversos ambientes
-- **Configuração Simples**: Configuração única da chave API para acesso a todas as ferramentas
+1. Clone o repositório
+2. Instale as dependências:
+   ```bash
+   npm install
+   ```
+3. Configure as variáveis de ambiente no arquivo `.env`:
+   ```
+   PORT=3000
+   MCP_API_KEY=seu_mcp_api_key
+   MCP_API_URL=https://www.mcp.run/api
+   MCP_SSE_URL=https://www.mcp.run/api/sse
+   ```
 
-## Instalação
+## Build
 
-```bash
-# Clone o repositório
-git clone https://github.com/diegofornalha/mcp-server-tess-xtp.git
-cd mcp-server-tess-xtp
-
-# Instale as dependências
-npm install
-```
-
-## Compilação
-
-```bash
-# Prepare o ambiente e compile
-bash prepare.sh && npm run build
-```
-
-## Ferramentas Disponíveis
-
-Este plugin XTP expõe as seguintes ferramentas:
-
-1. `listar_agentes_tess` - Lista todos os agentes disponíveis na API TESS
-2. `obter_agente_tess` - Obtém detalhes de um agente específico
-3. `executar_agente_tess` - Executa um agente com mensagens específicas
-4. `listar_arquivos_agente_tess` - Lista arquivos associados a um agente
-
-## Implantação com XTP CLI
+Para compilar o plugin WebAssembly:
 
 ```bash
-# Faça login no XTP
-xtp login
-
-# Envie o plugin
-xtp plugin push
+npm run build
 ```
 
-## Relacionados
+## Execução
 
-- [MCP-Server-TESS](https://github.com/diegofornalha/mcp-server-tess) - Implementação MCP completa para a API TESS
-- [Extism](https://extism.org/) - Framework para plug-ins WebAssembly
+Para iniciar o servidor:
 
-## Licença
+```bash
+npm start
+```
 
-MIT 
+Para desenvolvimento com hot-reload:
+
+```bash
+npm run dev
+```
+
+## Endpoints
+
+### Health Check
+- GET `/health`
+- Verifica se o servidor está funcionando
+
+### Listar Ferramentas MCP
+- GET `/api/mcp/tools`
+- Query params:
+  - `session_id`: ID da sessão MCP
+  - `mcp_sse_url`: URL do SSE do MCP
+
+### Executar Ferramenta MCP
+- POST `/api/mcp/execute`
+- Query params:
+  - `session_id`: ID da sessão MCP
+  - `mcp_sse_url`: URL do SSE do MCP
+- Body:
+  ```json
+  {
+    "tool": "nome_da_ferramenta",
+    "params": {
+      // parâmetros específicos da ferramenta
+    }
+  }
+  ```
+
+## Arquitetura
+
+O servidor é composto por:
+
+1. **Node.js + Express**: Servidor HTTP que recebe as requisições
+2. **Plugin Rust/WebAssembly**: Lógica principal que processa as requisições
+3. **Proxy MCP**: Encaminha requisições para o MCP.run
+
+## Desenvolvimento
+
+O código do plugin está em Rust e é compilado para WebAssembly. O servidor Node.js carrega este plugin e o utiliza para processar as requisições.
+
+Para modificar o comportamento do servidor:
+
+1. Edite o código Rust em `src/lib.rs`
+2. Recompile o plugin com `npm run build`
+3. Reinicie o servidor
+
+## Logs e Monitoramento
+
+O servidor registra logs para:
+- Inicialização do servidor
+- Erros de processamento
+- Chamadas de API
+
+## Segurança
+
+- Todas as requisições devem incluir um `session_id` válido
+- As credenciais do MCP são configuradas via variáveis de ambiente
+- CORS está habilitado para desenvolvimento
+
+## Troubleshooting
+
+Se encontrar problemas:
+
+1. Verifique se o plugin foi compilado corretamente
+2. Confirme que as variáveis de ambiente estão configuradas
+3. Verifique os logs do servidor
+4. Certifique-se que o MCP.run está acessível 

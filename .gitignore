@@ -40,3 +40,36 @@ dist/**/*
 # ignore yarn.lock
 yarn.lock
 
+# Node.js
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# Rust
+/target
+**/*.rs.bk
+Cargo.lock
+
+# Ambiente
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+*.swp
+*.swo
+
+# Build
+dist/
+build/
+*.wasm
+
+# Logs
+logs/
+*.log
+
+# Sistema
+.DS_Store
+Thumbs.db
+
