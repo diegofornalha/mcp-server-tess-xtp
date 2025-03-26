@@ -1,4 +1,3 @@
-
 import {
       BlobResourceContents,
       CallToolRequest,
@@ -13,9 +12,63 @@ import {
       ToolDescription,
   } from './pdk'
 
-
-
-
+/**
+ * Lista de ferramentas disponíveis na API TESS
+ */
+const TESS_TOOLS: ToolDescription[] = [
+  {
+    name: "listar_agentes_tess",
+    description: "Lista todos os agentes disponíveis na API TESS",
+    inputSchema: {
+      type: "object",
+      properties: {
+        page: { type: "number", description: "Número da página (padrão: 1)" },
+        per_page: { type: "number", description: "Itens por página (padrão: 15, máx: 100)" }
+      }
+    }
+  },
+  {
+    name: "obter_agente_tess",
+    description: "Obtém detalhes de um agente específico",
+    inputSchema: {
+      type: "object",
+      required: ["agent_id"],
+      properties: {
+        agent_id: { type: "string", description: "ID do agente a ser consultado" }
+      }
+    }
+  },
+  {
+    name: "executar_agente_tess",
+    description: "Executa um agente com mensagens específicas",
+    inputSchema: {
+      type: "object",
+      required: ["agent_id", "messages"],
+      properties: {
+        agent_id: { type: "string", description: "ID do agente a ser executado" },
+        temperature: { type: "string", description: "Temperatura para geração (0-1)" },
+        model: { type: "string", description: "Modelo a ser usado" },
+        messages: { type: "string", description: "Mensagens para o agente (formato chat JSON)" },
+        tools: { type: "string", description: "Ferramentas a serem habilitadas" },
+        file_ids: { type: "string", description: "IDs dos arquivos a serem anexados (JSON array)" },
+        waitExecution: { type: "boolean", description: "Esperar pela execução completa" }
+      }
+    }
+  },
+  {
+    name: "listar_arquivos_agente_tess",
+    description: "Lista todos os arquivos associados a um agente",
+    inputSchema: {
+      type: "object",
+      required: ["agent_id"],
+      properties: {
+        agent_id: { type: "string", description: "ID do agente" },
+        page: { type: "number", description: "Número da página (padrão: 1)" },
+        per_page: { type: "number", description: "Itens por página (padrão: 15, máx: 100)" }
+      }
+    }
+  }
+];
 
 /**
  * Called when the tool is invoked. 
@@ -24,9 +77,36 @@ import {
  * @param {CallToolRequest} input - The incoming tool request from the LLM
  * @returns {CallToolResult} The servlet's response to the given tool call
  */
-export function callImpl(input: CallToolRequest):CallToolResult {
-  // TODO: fill out your implementation here
-  throw new Error("Function not implemented.");
+export function callImpl(input: CallToolRequest): CallToolResult {
+  const toolName = input.params.name;
+  
+  // Verifica se a ferramenta existe
+  const toolExists = TESS_TOOLS.some(tool => tool.name === toolName);
+  if (!toolExists) {
+    return {
+      content: [
+        {
+          type: ContentType.Text,
+          text: JSON.stringify({ error: `Ferramenta "${toolName}" não encontrada` })
+        }
+      ]
+    };
+  }
+  
+  // TODO: Implementar a chamada real para a API TESS
+  // Por enquanto, retorna uma resposta simulada
+  return {
+    content: [
+      {
+        type: ContentType.Text,
+        text: JSON.stringify({ 
+          message: `Simulação da chamada à ferramenta ${toolName}`,
+          params: input.params,
+          status: "success" 
+        })
+      }
+    ]
+  };
 }
 
 /**
@@ -36,9 +116,10 @@ export function callImpl(input: CallToolRequest):CallToolResult {
  *
  * @returns {ListToolsResult} The tools' descriptions, supporting multiple tools from a single servlet.
  */
-export function describeImpl():ListToolsResult {
-  // TODO: fill out your implementation here
-  throw new Error("Function not implemented.");
+export function describeImpl(): ListToolsResult {
+  return {
+    tools: TESS_TOOLS
+  };
 }
 
 
